@@ -12,8 +12,6 @@ app.get('/', (req, res)=>{
 }) 
 
 
-
-//TODO
 app.get('/usuarios', async (req, res) => {
 
 const {data, error} = await supabase
@@ -28,7 +26,26 @@ res.json(data)
 })
 
 
-
+  app.delete('/usuarios/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+  
+    const { data, error } = await supabase
+      .from('usuarios')
+      .delete()
+      .eq('id', id)
+      .select();
+  
+    if (error) {
+      console.error('Error al eliminar usuario:', error);
+      return res.status(500).json({ error: 'Error al eliminar usuario' });
+    }
+  
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+  
+    res.status(204).send(); // Eliminación exitosa, sin contenido
+  });
 
 
 app.listen(PORT, ()=>{
