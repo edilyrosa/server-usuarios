@@ -5,7 +5,21 @@ import cors from 'cors'
 const app = express()
 const PORT = 3000;
 app.use(express.json())
-app.use(cors())
+
+
+//para evitar el error por CORS que se lanzara, porque el origen de back y front usan puertos diferentes. CORS es: Cross-Origin Resource Sharing.
+//!app.use(cors()); //Permite que cualquier origen FRONT, lo consuma.
+app.use(cors({
+    origin:'http://127.0.0.1:5500'//Permite solo este origen FRONT, que lo consuma
+}));
+
+
+
+
+
+
+
+
 
 
 app.get('/', (req, res)=>{
