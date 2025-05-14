@@ -48,6 +48,8 @@ app.delete('/usuarios/:id', async (req, res) => {
     res.status(204).send(); // Eliminación exitosa, sin contenido
 });
 
+
+
 app.get('/usuarios/:id', async (req, res) => {//?NEVESARIA PARA HACER PUT PQ FRONT VALIDA SU EXISTENCIA ANTES
     const id = parseInt(req.params.id);
     const { data, error } = await supabase
