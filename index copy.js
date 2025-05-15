@@ -12,9 +12,20 @@ app.use(express.json())
 // app.use(cors({
 //     origin:'http://127.0.0.1:5500'//Permite solo este origen FRONT, que lo consuma
 // }));
-app.use(cors({
-    origin:'https://practica-crud-academia.vercel.app/'//Permite solo este origen FRONT, que lo consuma
-}));
+// app.use(cors({
+//     origin:'https://practica-crud-academia.vercel.app/'//Permite solo este origen FRONT, que lo consuma
+// }));
+
+const allowedOrigins = [
+  'http://127.0.0.1:5500', 
+  'http://127.0.0.1:5501', 
+  'https://practica-crud-academia.vercel.app/'
+]
+// app.use(cors({
+//     origin: (origen, callback) =>{
+//       if(!origen)
+//     }
+// }));
 
 
 

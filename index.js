@@ -11,7 +11,7 @@ app.use(express.json());
 //     origin:'http://127.0.0.1:5500'//Permite solo este origen FRONT, que lo consuma
 // }));
 app.use(cors({
-    origin:'https://practica-crud-academia.vercel.app/'//Permite solo este origen FRONT, que lo consuma
+    origin:'https://practica-crud-academia.vercel.app'//Permite solo este origen FRONT, que lo consuma
 }));
 
 
