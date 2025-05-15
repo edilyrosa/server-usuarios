@@ -24,12 +24,46 @@ app.get("/usuarios", async (req, res) => {
 });
 
 //TODO: Obtener usuario por ID
+app.get("/usuarios/:id", async (req, res) => {
+    const id = parseInt(req.params.id)
+    const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
+    if(error) return res.status(500).json({error:'Error la obtener al usuario'})
+    if(!data) return res.status(404).json({error:'Error para encontrar al usuario'})
+    res.json(data)
+})
 
 
 //TODO: Crear nuevo usuario
+app.post("/usuarios", async (req, res )=> {
+    const usuario = req.body
+    if(
+        !usuario.nombre ||
+        usuario.edad === undefined ||
+        !usuario.email ||
+        !usuario.foto ||
+        usuario.aceptacion === undefined ||
+        usuario.genero === undefined
+    ) return res.status(400).json({error:'Faltan datos para hacer post de usuario'})
+
+    const {data, error} = await supabase.from('usuarios').insert([...usuario]).select()
+
+    if(error) return res.status(500).json({error:'Error al crear/postear nuevo uusario'})
+
+    res.json(data[0])
+})
 
 
 //TODO: Actualizar usuario por ID
+app.put("/usuarios/:id", (req, res)=>{
+    const id =  parseInt(req.params.id)
+    const usuario = req.body
+    if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
+        usuario.nombre === undefined &&
+        usuario.edad
+       //TODO .... Haz el resto de las validaciones
+    ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
+})
+
 
 
 // Eliminar usuario por ID
