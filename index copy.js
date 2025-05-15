@@ -7,13 +7,13 @@ const PORT = 3000;
 app.use(express.json())
 
 
-//para evitar el error por CORS que se lanzara, porque el origen de back y front usan puertos diferentes. CORS es: Cross-Origin Resource Sharing.
-//! app.use(cors()); //Permite que cualquier origen FRONT, lo consuma.
+//para evitar el error por CORS que se lanzara, porque el origen de back y front 
+// usan puertos diferentes. CORS es: Cross-Origin Resource Sharing.
+
+// app.use(cors()); //Permite que cualquier origen FRONT, lo consuma.
+// app.use(cors({origin: "*" })); //Permite que cualquier origen FRONT, lo consuma.
 // app.use(cors({
 //     origin:'http://127.0.0.1:5500'//Permite solo este origen FRONT, que lo consuma
-// }));
-// app.use(cors({
-//     origin:'https://practica-crud-academia.vercel.app/'//Permite solo este origen FRONT, que lo consuma
 // }));
 
 const allowedOrigins = [
@@ -21,11 +21,14 @@ const allowedOrigins = [
   'http://127.0.0.1:5501', 
   'https://practica-crud-academia.vercel.app/'
 ]
-// app.use(cors({
-//     origin: (origen, callback) =>{
-//       if(!origen)
-//     }
-// }));
+app.use(cors({
+    origin: (origin, callback) =>{
+      if(!origin || allowedOrigins.includes(origin))
+        callback(null, true) //✅Permite acceso
+      else 
+      callback(new Error('Origin no permitido por CORS')) //❌ Bloquea acceso
+    }
+}));
 
 
 

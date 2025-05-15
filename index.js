@@ -5,15 +5,7 @@ import cors from "cors";
 const app = express();
 const PORT = 3000;
 app.use(express.json());
-
-//app.use(cors());
-// app.use(cors({
-//     origin:'http://127.0.0.1:5500'//Permite solo este origen FRONT, que lo consuma
-// }));
-app.use(cors({
-    origin:'https://practica-crud-academia.vercel.app'//Permite solo este origen FRONT, que lo consuma
-}));
-
+app.use(cors()); //TODO: Mejorar la seguridad
 
 // Ruta raíz para comprobar servidor activo
 app.get("/", (req, res) => {
@@ -31,84 +23,14 @@ app.get("/usuarios", async (req, res) => {
   res.json(data);
 });
 
-// Obtener usuario por ID
-app.get("/usuarios/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  const { data, error } = await supabase
-   .from("usuarios").select("*").eq("id", id).single();
+//TODO: Obtener usuario por ID
 
-  if (error) return res.status(500).json({ error: "Error al obtener usuario" });
-  
-  if (!data) return res.status(404).json({ error: "Usuario no encontrado" });
-  
-  res.json(data);
-});
 
-// Crear nuevo usuario
-app.post("/usuarios", async (req, res) => {//cliente con REQ, apunta y envio la data del form
-  const usuario = req.body;                //Servidor hara insert y enviara RES
+//TODO: Crear nuevo usuario
 
-  //?Si un dato viene vacio o indefinido, lanzamos un 400
-  //! Validar campos obligatorios (permitiendo 0 y false)
-  if (
-    !usuario.nombre ||
-    usuario.edad === undefined || //!Usuario podria digitar 0
-    !usuario.email ||
-    !usuario.foto ||
-    usuario.aceptacion === undefined || //!Usuario podria digitar 0
-    usuario.genero === undefined //!Usuario podria ser genero===false
-  
-) return res.status(400).json({ error: "Faltan datos obligatorios" });
-  
-  //?si data esta completa enviamos a BBDD
-  const { data, error } = await supabase
-    .from("usuarios").insert([{ ...usuario }]).select();
 
-  if (error) {
-    console.error("Error al crear usuario:", error);
-    return res.status(500).json({ error: "Error al crear usuario" });
-  }
-  res.status(201).json(data[0]);
-});
+//TODO: Actualizar usuario por ID
 
-// Actualizar usuario por ID
-app.put("/usuarios/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  const usuario = req.body;
-
-  //? Validacion: BODY debe traer algo, al menos un campo para actualizar
-  //!si TODOS dan TRUE es pq NO trajo nada
-  if (
-    usuario.nombre === undefined &&
-    (usuario.edad === undefined || usuario.edad === null) &&
-    usuario.email === undefined &&
-    usuario.foto === undefined &&
-    (usuario.aceptacion === undefined || usuario.aceptacion === null) &&
-    usuario.genero === undefined
-  ) return res.status(400).json({ error: "Debes enviar al menos un campo para actualizar" });
-  
-  //Creamos el obj que enviaremos a la BBDD
-  const camposActualizar = {}; //!campos que no venga vacio, va a la BBDD
-  if (usuario.nombre !== undefined) camposActualizar.nombre = usuario.nombre;
-  if (usuario.edad !== undefined && usuario.edad !== null) camposActualizar.edad = usuario.edad;
-  if (usuario.email !== undefined) camposActualizar.email = usuario.email;
-  if (usuario.foto !== undefined) camposActualizar.foto = usuario.foto;
-  if (usuario.aceptacion !== undefined && usuario.aceptacion !== null)
-    camposActualizar.aceptacion = usuario.aceptacion;
-  if (usuario.genero !== undefined) camposActualizar.genero = usuario.genero;
-
-  const { data, error } = await supabase
-    .from("usuarios").update(camposActualizar).eq("id", id).select();
-
-  if (error) {
-    console.error("Error al actualizar usuario:", error);
-    return res.status(500).json({ error: "Error al actualizar usuario" });
-  }
-
-  if (data.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
-  
-  res.json(data[0]);
-});
 
 // Eliminar usuario por ID
 app.delete("/usuarios/:id", async (req, res) => {
@@ -136,3 +58,102 @@ app.delete("/usuarios/:id", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//! Obtener usuario por ID
+// app.get("/usuarios/:id", async (req, res) => {
+//   const id = parseInt(req.params.id);
+//   const { data, error } = await supabase
+//    .from("usuarios").select("*").eq("id", id).single();
+
+//   if (error) return res.status(500).json({ error: "Error al obtener usuario" });
+  
+//   if (!data) return res.status(404).json({ error: "Usuario no encontrado" });
+  
+//   res.json(data);
+// });
+
+//! Crear nuevo usuario
+// app.post("/usuarios", async (req, res) => {//cliente con REQ, apunta y envio la data del form
+//   const usuario = req.body;                //Servidor hara insert y enviara RES
+
+//   //?Si un dato viene vacio o indefinido, lanzamos un 400
+//   //! Validar campos obligatorios (permitiendo 0 y false)
+//   if (
+//     !usuario.nombre ||
+//     usuario.edad === undefined || //!Usuario podria digitar 0
+//     !usuario.email ||
+//     !usuario.foto ||
+//     usuario.aceptacion === undefined || //!Usuario podria digitar 0
+//     usuario.genero === undefined //!Usuario podria ser genero===false
+  
+// ) return res.status(400).json({ error: "Faltan datos obligatorios" });
+  
+//   //?si data esta completa enviamos a BBDD
+//   const { data, error } = await supabase
+//     .from("usuarios").insert([{ ...usuario }]).select();
+
+//   if (error) {
+//     console.error("Error al crear usuario:", error);
+//     return res.status(500).json({ error: "Error al crear usuario" });
+//   }
+//   res.status(201).json(data[0]);
+// });
+
+//! Actualizar usuario por ID
+// app.put("/usuarios/:id", async (req, res) => {
+//   const id = parseInt(req.params.id);
+//   const usuario = req.body;
+
+//   //? Validacion: BODY debe traer algo, al menos un campo para actualizar
+//   //!si TODOS dan TRUE es pq NO trajo nada
+//   if (
+//     usuario.nombre === undefined &&
+//     (usuario.edad === undefined || usuario.edad === null) &&
+//     usuario.email === undefined &&
+//     usuario.foto === undefined &&
+//     (usuario.aceptacion === undefined || usuario.aceptacion === null) &&
+//     usuario.genero === undefined
+//   ) return res.status(400).json({ error: "Debes enviar al menos un campo para actualizar" });
+  
+//   //Creamos el obj que enviaremos a la BBDD
+//   const camposActualizar = {}; //!campos que no venga vacio, va a la BBDD
+//   if (usuario.nombre !== undefined) camposActualizar.nombre = usuario.nombre;
+//   if (usuario.edad !== undefined && usuario.edad !== null) camposActualizar.edad = usuario.edad;
+//   if (usuario.email !== undefined) camposActualizar.email = usuario.email;
+//   if (usuario.foto !== undefined) camposActualizar.foto = usuario.foto;
+//   if (usuario.aceptacion !== undefined && usuario.aceptacion !== null)
+//     camposActualizar.aceptacion = usuario.aceptacion;
+//   if (usuario.genero !== undefined) camposActualizar.genero = usuario.genero;
+
+//   const { data, error } = await supabase
+//     .from("usuarios").update(camposActualizar).eq("id", id).select();
+
+//   if (error) {
+//     console.error("Error al actualizar usuario:", error);
+//     return res.status(500).json({ error: "Error al actualizar usuario" });
+//   }
+
+//   if (data.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+  
+//   res.json(data[0]);
+// });
