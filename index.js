@@ -5,10 +5,8 @@ import cors from "cors";
 const app = express();
 const PORT = 3000;
 app.use(express.json());
-//app.use(cors()); //TODO: Mejorar la seguridad
-app.use(cors(
-  {origin:'http://127.0.0.1:5501'}
-));
+app.use(cors()); //TODO: Mejorar la seguridad
+
 
 
 
@@ -72,13 +70,6 @@ app.put("/usuarios/:id", (req, res)=>{
        //TODO .... Haz el resto de las validaciones
     ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
 })
-
-
-
-
-
-
-
 
 
 
