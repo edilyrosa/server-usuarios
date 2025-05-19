@@ -26,15 +26,55 @@ app.get("/usuarios", async (req, res) => {
   res.json(data);
 });
 
-//Obtener usuario por ID
-app.get("/usuarios/:id", async (req, res) => {
-    const id = parseInt(req.params.id)
-   const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
-    //const {data, error} = await supabase.from('usuarios').select('*').eq('id', id)
-    if(error) return res.status(500).json({error:'Error la obtener al usuario'})
-    if(!data) return res.status(404).json({error:'Error para encontrar al usuario'})
-    res.json(data)
-})
+//!Obtener usuario por ID
+// app.get("/usuarios/:id", async (req, res) => {
+//     const id = parseInt(req.params.id)
+//    const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
+//     //const {data, error} = await supabase.from('usuarios').select('*').eq('id', id)
+//     if(error) return res.status(500).json({error:'Error la obtener al usuario'})
+//     if(!data) return res.status(404).json({error:'Error para encontrar al usuario'})
+//     res.json(data)
+// })
+
+
+
+app.get("/usuarios", async (req, res) => {
+  const { edad, genero } = req.query;
+
+  let query = supabase.from("usuarios").select("*");
+
+  // Aplica filtros si existen
+  if (edad !== undefined) {
+    query = query.eq("edad", Number(edad));
+  }
+  if (genero !== undefined) {
+    // Convierte el string 'true'/'false' a booleano
+    const generoBool = genero === "true";
+    query = query.eq("genero", generoBool);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error al obtener usuarios:", error);
+    return res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+
+  res.json(data);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //Crear nuevo usuario CON LOS CHICOS
@@ -58,18 +98,64 @@ app.post("/usuarios", async (req, res )=> {  //TODO: AGREGAR {}
 })
 
 
-
-
 //TODO TERMINAR: Actualizar usuario por ID
-app.put("/usuarios/:id", (req, res)=>{
-    const id =  parseInt(req.params.id)
-    const usuario = req.body
-    if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
-        usuario.nombre === undefined &&
-        usuario.edad
-       //TODO .... Haz el resto de las validaciones
-    ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
-})
+// app.put("/usuarios/:id", (req, res)=>{
+//     const id =  parseInt(req.params.id)
+//     const usuario = req.body
+//     if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
+//         usuario.nombre === undefined &&
+//         usuario.edad
+//        //TODO .... Haz el resto de las validaciones
+//     ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
+// })
+
+
+
+
+
+
+
+//! Actualizar usuario por ID
+app.put("/usuarios/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const usuario = req.body;
+
+  //? Validacion: BODY debe traer algo, al menos un campo para actualizar
+  //!si TODOS dan TRUE es pq NO trajo nada
+  if (
+    usuario.nombre === undefined &&
+    (usuario.edad === undefined || usuario.edad === null) &&
+    usuario.email === undefined &&
+    usuario.foto === undefined &&
+    (usuario.aceptacion === undefined || usuario.aceptacion === null) &&
+    usuario.genero === undefined
+  ) return res.status(400).json({ error: "Debes enviar al menos un campo para actualizar" });
+  
+  //Creamos el obj que enviaremos a la BBDD
+  const camposActualizar = {}; //!campos que no venga vacio, va a la BBDD
+  if (usuario.nombre !== undefined) camposActualizar.nombre = usuario.nombre;
+  if (usuario.edad !== undefined && usuario.edad !== null) camposActualizar.edad = usuario.edad;
+  if (usuario.email !== undefined) camposActualizar.email = usuario.email;
+  if (usuario.foto !== undefined) camposActualizar.foto = usuario.foto;
+  if (usuario.aceptacion !== undefined && usuario.aceptacion !== null)
+    camposActualizar.aceptacion = usuario.aceptacion;
+  if (usuario.genero !== undefined) camposActualizar.genero = usuario.genero;
+
+  const { data, error } = await supabase
+    .from("usuarios").update(camposActualizar).eq("id", id).select();
+
+  if (error) {
+    console.error("Error al actualizar usuario:", error);
+    return res.status(500).json({ error: "Error al actualizar usuario" });
+  }
+
+  if (data.length === 0) return res.status(404).json({ error: "Usuario no encontrado" });
+  
+  res.json(data[0]);
+});
+
+
+
 
 
 
