@@ -24,7 +24,7 @@ app.get("/usuarios", async (req, res) => {
 });
 
 //Obtener usuario por ID
-app.get("/usuarios/:id", async (req, res) => {
+app.get("/usuarios/:id", async (req, res) => { //TODO: UN CAMBIO
     const id = parseInt(req.params.id)
     //TODO; const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
     const {data, error} = await supabase.from('usuarios').select('*').eq('id', id)
@@ -34,24 +34,54 @@ app.get("/usuarios/:id", async (req, res) => {
 })
 
 
-//Crear nuevo usuario
-app.post("/usuarios", async (req, res )=> {
-    const usuario = req.body
-    if(
-        !usuario.nombre ||
-        usuario.edad === undefined ||
-        !usuario.email ||
-        !usuario.foto ||
-        usuario.aceptacion === undefined ||
-        usuario.genero === undefined
-    ) return res.status(400).json({error:'Faltan datos para hacer post de usuario'})
+//Crear nuevo usuario CON LOS CHICOS
+// app.post("/usuarios", async (req, res )=> {
+//     const usuario = req.body
+//     if(
+//         !usuario.nombre ||
+//         !usuario.email ||
+//         !usuario.foto ||
+//         usuario.edad === undefined ||
+//         usuario.aceptacion === undefined ||
+//         usuario.genero === undefined
+//     ) return res.status(400).json({error:'Faltan datos para hacer post de usuario'})
 
-    const {data, error} = await supabase.from('usuarios').insert([...usuario]).select()
+//     const {data, error} = await supabase.from('usuarios').insert([...usuario]).select()
 
-    if(error) return res.status(500).json({error:'Error al crear/postear nuevo uusario'})
+//     if(error) return res.status(500).json({error:'Error al crear/postear nuevo uusario'})
 
-    res.json(data[0])
-})
+//     res.json(data[0])
+// })
+
+
+
+ app.post('/usuarios', async (req, res) => {
+    const usuario = req.body; //! 1. traemos el cuerpo de la peticion (form) { nombre, edad, profesion }
+ 
+    //!2. validamos que esten todos los campos, evitando data corrupta.
+    if (!usuario.nombre || !usuario.edad ||  !usuario.email || !usuario.foto || !usuario.aceptacion || !usuario.genero){
+      return res.status(400).json({ error: 'Faltan datos obligatorios' })
+      console.log('faltan datos obligatorios')
+    }
+
+    const { data, error } = await supabase
+      .from('usuarios')
+      .insert([{ ...usuario }])//! 3 .insert() espera un arry de Objs, incluso si se inserte un solo registro.
+      .select();
+  
+    if (error) {
+      console.error('Error al crear usuario:', error);
+      return res.status(500).json({ error: 'Error al crear usuario' });
+    }
+  
+    res.status(201).json(data[0]); //!pasamos el registro creado
+  });
+
+
+
+
+
+
 
 
 
