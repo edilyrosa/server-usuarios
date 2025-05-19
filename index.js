@@ -23,9 +23,10 @@ app.get("/usuarios", async (req, res) => {
   res.json(data);
 });
 
-//TODO: Obtener usuario por ID
+//Obtener usuario por ID
 app.get("/usuarios/:id", async (req, res) => {
     const id = parseInt(req.params.id)
+    //TODO; const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
     const {data, error} = await supabase.from('usuarios').select('*').eq('id', id)
     if(error) return res.status(500).json({error:'Error la obtener al usuario'})
     if(!data) return res.status(404).json({error:'Error para encontrar al usuario'})
@@ -33,7 +34,7 @@ app.get("/usuarios/:id", async (req, res) => {
 })
 
 
-//TODO: Crear nuevo usuario
+//Crear nuevo usuario
 app.post("/usuarios", async (req, res )=> {
     const usuario = req.body
     if(
@@ -53,16 +54,65 @@ app.post("/usuarios", async (req, res )=> {
 })
 
 
-//TODO: Actualizar usuario por ID
-app.put("/usuarios/:id", (req, res)=>{
-    const id =  parseInt(req.params.id)
-    const usuario = req.body
-    if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
-        usuario.nombre === undefined &&
-        usuario.edad
-       //TODO .... Haz el resto de las validaciones
-    ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
-})
+
+
+//TODO TERMINAR: Actualizar usuario por ID
+// app.put("/usuarios/:id", (req, res)=>{
+//     const id =  parseInt(req.params.id)
+//     const usuario = req.body
+//     if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
+//         usuario.nombre === undefined &&
+//         usuario.edad
+//        //TODO .... Haz el resto de las validaciones
+//     ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
+// })
+
+
+
+
+ app.put('/usuarios/:id', async (req, res) => {
+    const id = parseInt(req.params.id); //! id para saber a quien voy a UPDATE
+    const usuario = req.body; //!Data a UPDATE
+  
+    if ( // Validar que al menos un campo venga para actualizarm NO TODOS PUEDEN DAR TRUE
+      !usuario.nombre &&
+      !usuario.edad &&
+      !usuario.email &&
+      !usuario.foto &&
+      !usuario.aceptacion &&
+      !usuario.genero
+    ) {
+      return res.status(400).json({ error: 'Debes enviar al menos un campo para actualizar' });
+    }
+  
+    //! Construir objeto con la UPDATE data enviada desde front
+    const camposActualizar = {};
+    if (usuario.nombre) camposActualizar.nombre = usuario.nombre;
+    if (usuario.edad) camposActualizar.edad = usuario.edad;
+    if (usuario.email) camposActualizar.email = usuario.email;
+    if (usuario.foto) camposActualizar.foto = usuario.foto;
+    if (usuario.aceptacion !== undefined) camposActualizar.aceptacion = usuario.aceptacion;
+    if (usuario.genero) camposActualizar.genero = usuario.genero;
+  
+    const { data, error } = await supabase
+      .from('usuarios')
+      .update(camposActualizar) //!simplemente pasamos el Obj
+      .eq('id', id)
+      .select();//!obtenemos el ele update
+  
+    if (error) {
+      console.error('Error al actualizar usuario:', error);
+      return res.status(500).json({ error: 'Error al actualizar usuario' });
+    }
+  
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+  
+    res.json(data[0]); //! enviamos Usuario actualizado
+  });
+  
+
 
 
 
