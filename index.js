@@ -7,7 +7,7 @@ const PORT = 3000;
 app.use(express.json());
 //app.use(cors()); //TODO: Mejorar la seguridad
 app.use(cors(
-  {origin:'http://127.0.0.1:5501/index.html'}
+  {origin:'http://127.0.0.1:5501'}
 ));
 
 
