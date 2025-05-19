@@ -26,7 +26,7 @@ app.get("/usuarios", async (req, res) => {
 //TODO: Obtener usuario por ID
 app.get("/usuarios/:id", async (req, res) => {
     const id = parseInt(req.params.id)
-    const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
+    const {data, error} = await supabase.from('usuarios').select('*').eq('id', id)
     if(error) return res.status(500).json({error:'Error la obtener al usuario'})
     if(!data) return res.status(404).json({error:'Error para encontrar al usuario'})
     res.json(data)
