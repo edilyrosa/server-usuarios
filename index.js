@@ -6,8 +6,20 @@ const app = express();
 const PORT = 3000;
 app.use(express.json());
 //app.use(cors()); //TODO: Mejorar la seguridad
+
+
+const allowedOrigins = [
+'http://127.0.0.1:5501',
+'https://practica-crud-academia.vercel.app'
+]
+
+
 app.use(cors(
-  {origin:'http://127.0.0.1:5501'}//unico front permitido para consumir este server
+  {origin:(origin, callback)=> {
+    if(!origin || allowedOrigins.includes(origin)) callback(null, true) //✅Permite acceso
+      else callback(new Error('Origin no permitido por CORS')) //❌ Bloquea acceso
+  }
+  }//unico front permitido para consumir este server
 )); 
 
 
