@@ -1,7 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 import express from "express";
-import cors from "cors";import 
-logger from "./logger.js"; // importa tu logger
+import cors from "cors";
+//import logger from "./logger.js"; // importa tu logger
 
 const app = express();
 const PORT = 3000;
@@ -41,8 +41,10 @@ app.use(async (req, res, next) => {
   // Guarda el log en Supabase
   try {
     await supabase.from('logs').insert([log]);
-    // Opcional: también mostrar en consola para desarrollo
-    console.log(`[LOG] ${log.metodo} ${log.ruta} desde ${log.origen}`);
+
+    // Muestra en consola (para Render)
+    console.log(`[LOG] ${log.fecha} - ${log.metodo} ${log.ruta} desde ${log.origen} (${log.ip}) UA:${log.user_agent}`);
+  
   } catch (error) {
     console.error('Error guardando log en Supabase:', error);
     // No detenemos la petición si falla el log
@@ -200,6 +202,6 @@ app.delete("/usuarios/:id", async (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-   logger.info(`Servidor corriendo en http://localhost:${PORT}`);
+   //logger.info(`Servidor corriendo en http://localhost:${PORT}`);
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
