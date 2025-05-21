@@ -27,11 +27,19 @@ app.use(cors(
 app.use((req, res, next) => {
   logger.info({
     fecha: new Date().toISOString(),
-    ip: req.ip,
-    metodo: req.method,
-    ruta: req.originalUrl,
-    origen: req.headers.origin || "directo",
-    userAgent: req.headers["user-agent"],
+      ip: req.ip,
+      x_forwarded_for: req.headers['x-forwarded-for'] || '',
+      metodo: req.method,
+      ruta: req.originalUrl,
+      status_code: res.statusCode,
+      origen: req.headers.origin || '',
+      referer: req.headers.referer || '',
+      host: req.headers.host || '',
+      user_agent: req.headers['user-agent'] || '',
+      query_params: JSON.stringify(req.query),
+      body: req.method !== 'GET' ? JSON.stringify(req.body) : '',
+      cookies: req.headers.cookie || '',
+      protocol: req.protocol
   });
   next();
 });
