@@ -24,8 +24,6 @@ app.use(cors(
 )); 
 
 
-
-
 // Middleware para registrar logs en Supabase
 app.use(async (req, res, next) => {
   // Prepara el log
