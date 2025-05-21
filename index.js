@@ -23,25 +23,49 @@ app.use(cors(
   }//unico front permitido para consumir este server
 )); 
 
-// Middleware de logging de seguridad
-app.use((req, res, next) => {
-  logger.info({
+
+
+
+// Middleware para registrar logs en Supabase
+app.use(async (req, res, next) => {
+  // Prepara el log
+  const log = {
     fecha: new Date().toISOString(),
-      ip: req.ip,
-      x_forwarded_for: req.headers['x-forwarded-for'] || '',
-      metodo: req.method,
-      ruta: req.originalUrl,
-      status_code: res.statusCode,
-      origen: req.headers.origin || '',
-      referer: req.headers.referer || '',
-      host: req.headers.host || '',
-      user_agent: req.headers['user-agent'] || '',
-      query_params: JSON.stringify(req.query),
-      body: req.method !== 'GET' ? JSON.stringify(req.body) : '',
-      cookies: req.headers.cookie || '',
-      protocol: req.protocol
-  });
+    ip: req.ip,
+    metodo: req.method,
+    ruta: req.originalUrl,
+    origen: req.headers.origin || 'directo',
+    user_agent: req.headers['user-agent'] || '',
+  };
+
+  // Guarda el log en Supabase
+  try {
+    await supabase.from('logs').insert([log]);
+    // Opcional: también mostrar en consola para desarrollo
+    console.log(`[LOG] ${log.metodo} ${log.ruta} desde ${log.origen}`);
+  } catch (error) {
+    console.error('Error guardando log en Supabase:', error);
+    // No detenemos la petición si falla el log
+  }
+
   next();
+});
+
+
+// Ruta para ver logs (protégela en producción)
+app.get("/logs", async (req, res) => {
+  const { data, error } = await supabase
+    .from("logs")
+    .select("*")
+    .order("fecha", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    console.error("Error al obtener logs:", error);
+    return res.status(500).json({ error: "Error al obtener logs" });
+  }
+  
+  res.json(data);
 });
 
 
