@@ -24,13 +24,7 @@ app.use(cors(
 
 
 
-
-
-
-
-
-
-// TODO: Middleware para registrar logs en Supabase
+1. // TODO: Middleware para registrar logs en Supabase
 app.use(async (req, res, next) => {
   // Prepara el log
   const log = {
@@ -60,7 +54,20 @@ app.use(async (req, res, next) => {
 });
 
 
-//TODO: Ruta para ver logs (protégela en producción)
+2. //TODO: Agrega esto al inicio de tu archivo principal (antes de las rutas)
+app.set('view engine', 'ejs');
+app.set('views', './views'); // Carpeta donde pondrás tus templates
+
+
+
+// Ruta raíz para comprobar servidor activo
+app.get("/", (req, res) => {
+  res.send("<h1>Servidor up</h1>");
+});
+
+
+
+3. //TODO: Ruta para ver logs (protégela en producción)
 app.get("/logs", async (req, res) => {
   const { data, error } = await supabase
     .from("logs")
@@ -78,20 +85,23 @@ app.get("/logs", async (req, res) => {
 
 
 
+4. //TODO: Crea la ruta en Express usando el template
+app.get('/logtabla', async (req, res) => {
+  const { data: logs, error } = await supabase
+    .from('logs')
+    .select('*')
+    .order('fecha', { ascending: false })
+    .limit(100);
 
+  if (error) return res.status(500).send('Error al obtener logs');
 
-
-
-
-
-
-
-
-
-// Ruta raíz para comprobar servidor activo
-app.get("/", (req, res) => {
-  res.send("<h1>Servidor up</h1>");
+  res.render('logtabla', { logs }); // Renderiza el template y pasa los logs
 });
+
+
+
+
+
 
 
 

@@ -24,9 +24,7 @@ app.use(cors(
 
 
 
-
-
-// TODO: Middleware para registrar logs en Supabase
+1. // TODO: Middleware para registrar logs en Supabase
 app.use(async (req, res, next) => {
   // Prepara el log
   const log = {
@@ -56,12 +54,9 @@ app.use(async (req, res, next) => {
 });
 
 
-//TODO
+2. //TODO: Agrega esto al inicio de tu archivo principal (antes de las rutas)
 app.set('view engine', 'ejs');
 app.set('views', './views'); // Carpeta donde pondrás tus templates
-
-
-
 
 
 
@@ -72,11 +67,7 @@ app.get("/", (req, res) => {
 
 
 
-
-
-
-
-//TODO: Ruta para ver logs (protégela en producción)
+3. //TODO: Ruta para ver logs (protégela en producción)
 app.get("/logs", async (req, res) => {
   const { data, error } = await supabase
     .from("logs")
@@ -94,7 +85,7 @@ app.get("/logs", async (req, res) => {
 
 
 
-//TODO: Crea la ruta en Express usando el template
+4. //TODO: Crea la ruta en Express usando el template
 app.get('/logtabla', async (req, res) => {
   const { data: logs, error } = await supabase
     .from('logs')
@@ -106,8 +97,6 @@ app.get('/logtabla', async (req, res) => {
 
   res.render('logtabla', { logs }); // Renderiza el template y pasa los logs
 });
-
-
 
 
 
