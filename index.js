@@ -1,14 +1,13 @@
 import { supabase } from "./supabaseClient.js";
 import express from "express";
 import cors from "cors";
-//import logger from "./logger.js"; // importa tu logger
 
 const app = express();
 const PORT = 3000;
 app.use(express.json());
 //app.use(cors()); //TODO: Mejorar la seguridad
 
-
+//!para cambiar de pierto del front: npx live-server --port=5502
 const allowedOrigins = [
 'http://127.0.0.1:5501',
 'https://practica-crud-academia.vercel.app'
@@ -24,16 +23,19 @@ app.use(cors(
 )); 
 
 
-// Middleware para registrar logs en Supabase
+
+
+
+// TODO: Middleware para registrar logs en Supabase
 app.use(async (req, res, next) => {
   // Prepara el log
   const log = {
-    fecha: new Date().toISOString(),
-    ip: req.ip,
-    metodo: req.method,
-    ruta: req.originalUrl,
-    origen: req.headers.origin || 'directo',
-    user_agent: req.headers['user-agent'] || '',
+    fecha: new Date().toISOString(),//Momento exacto de la petición:YYYY-MM-DDTHH:mm:ss.sssZ
+    ip: req.ip, //IP del cliente que hace la petición                         |
+    metodo: req.method, //Método HTTP usado (GET, POST, PUT, DELETE, etc.)            |
+    ruta: req.originalUrl, //Ruta completa solicitada por el cliente                     |
+    origen: req.headers.origin || 'directo', //Origen de la petición (CORS) o 'directo' si no hay origen
+    user_agent: req.headers['user-agent'] || '',//Información del navegador o cliente HTTP
   };
 
   // Guarda el log en Supabase
@@ -48,17 +50,39 @@ app.use(async (req, res, next) => {
     // No detenemos la petición si falla el log
   }
 
-  next();
+  next(); //next(); // Si no hay error, continuamos con la siguiente función de middleware
+  //hecha la inserción continuamos con la petición que es un get a /log, para mostrar los logs
+
 });
 
 
-// Ruta para ver logs (protégela en producción)
+//TODO
+app.set('view engine', 'ejs');
+app.set('views', './views'); // Carpeta donde pondrás tus templates
+
+
+
+
+
+
+// Ruta raíz para comprobar servidor activo
+app.get("/", (req, res) => {
+  res.send("<h1>Servidor up</h1>");
+});
+
+
+
+
+
+
+
+//TODO: Ruta para ver logs (protégela en producción)
 app.get("/logs", async (req, res) => {
   const { data, error } = await supabase
     .from("logs")
-    .select("*")
-    .order("fecha", { ascending: false })
-    .limit(100);
+    .select("*")                          //os registros más recientes aparecen primero en los resultados.
+    .order("fecha", { ascending: false })//Ordena los resultados por la columna fecha de forma descendente.
+    .limit(100); //Solo trae los primeros 100 resultados de la consulta. Evita traer demasiados registros.
 
   if (error) {
     console.error("Error al obtener logs:", error);
@@ -69,10 +93,27 @@ app.get("/logs", async (req, res) => {
 });
 
 
-// Ruta raíz para comprobar servidor activo
-app.get("/", (req, res) => {
-  res.send("<h1>Servidor up</h1>");
+
+//TODO: Crea la ruta en Express usando el template
+app.get('/logtabla', async (req, res) => {
+  const { data: logs, error } = await supabase
+    .from('logs')
+    .select('*')
+    .order('fecha', { ascending: false })
+    .limit(100);
+
+  if (error) return res.status(500).send('Error al obtener logs');
+
+  res.render('logtabla', { logs }); // Renderiza el template y pasa los logs
 });
+
+
+
+
+
+
+
+
 
 
 //TODO: Get mejorado para capturar parametros de busqueda pasados por URL
@@ -200,6 +241,5 @@ app.delete("/usuarios/:id", async (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-   //logger.info(`Servidor corriendo en http://localhost:${PORT}`);
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

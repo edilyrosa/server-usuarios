@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Logs</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #888; padding: 8px; text-align: left; }
+    th { background: #eee; }
+    tr:nth-child(even) { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h2>Últimos 100 logs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>IP</th>
+        <th>Método</th>
+        <th>Ruta</th>
+        <th>Origen</th>
+        <th>User-Agent</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% logs.forEach(log => { %>
+        <tr>
+          <td><%= log.id %></td>
+          <td><%= log.fecha %></td>
+          <td><%= log.ip %></td>
+          <td><%= log.metodo %></td>
+          <td><%= log.ruta %></td>
+          <td><%= log.origen %></td>
+          <td><%= log.user_agent %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</body>
+</html>

@@ -1,34 +1,26 @@
-// //TODO 
-// import { supabase } from "./supabaseClient.js";
-// import express from "express"
-// import cors from 'cors'
-// const app = express()
-// const PORT = 3000;
-// app.use(express.json())
+import { supabase } from "./supabaseClient.js";
+import express from "express";
+import cors from "cors";
+
+const app = express();
+const PORT = 3000;
+app.use(express.json());
+//app.use(cors()); //TODO: Mejorar la seguridad
+
+//!para cambiar de pierto del front: npx live-server --port=5502
+const allowedOrigins = [
+'http://127.0.0.1:5501',
+'https://practica-crud-academia.vercel.app'
+]
 
 
-// //para evitar el error por CORS que se lanzara, porque el origen de back y front 
-// // usan puertos diferentes. CORS es: Cross-Origin Resource Sharing.
-
-// // app.use(cors()); //Permite que cualquier origen FRONT, lo consuma.
-// // app.use(cors({origin: "*" })); //Permite que cualquier origen FRONT, lo consuma.
-// // app.use(cors({
-// //     origin:'http://127.0.0.1:5500'//Permite solo este origen FRONT, que lo consuma
-// // }));
-
-// const allowedOrigins = [
-//   'http://127.0.0.1:5500', 
-//   'http://127.0.0.1:5501', 
-//   'https://practica-crud-academia.vercel.app/'
-// ]
-// app.use(cors({
-//     origin: (origin, callback) =>{
-//       if(!origin || allowedOrigins.includes(origin))
-//         callback(null, true) //✅Permite acceso
-//       else 
-//       callback(new Error('Origin no permitido por CORS')) //❌ Bloquea acceso
-//     }
-// }));
+app.use(cors(
+  {origin:(origin, callback)=> {
+    if(!origin || allowedOrigins.includes(origin)) callback(null, true) //✅Permite acceso
+      else callback(new Error('Origin no permitido por CORS')) //❌ Bloquea acceso
+  }
+  }//unico front permitido para consumir este server
+)); 
 
 
 
@@ -38,133 +30,195 @@
 
 
 
+// TODO: Middleware para registrar logs en Supabase
+app.use(async (req, res, next) => {
+  // Prepara el log
+  const log = {
+    fecha: new Date().toISOString(),//Momento exacto de la petición:YYYY-MM-DDTHH:mm:ss.sssZ
+    ip: req.ip, //IP del cliente que hace la petición                         |
+    metodo: req.method, //Método HTTP usado (GET, POST, PUT, DELETE, etc.)            |
+    ruta: req.originalUrl, //Ruta completa solicitada por el cliente                     |
+    origen: req.headers.origin || 'directo', //Origen de la petición (CORS) o 'directo' si no hay origen
+    user_agent: req.headers['user-agent'] || '',//Información del navegador o cliente HTTP
+  };
 
-// app.get('/', (req, res)=>{
-//     res.send('<h1>servidor up</h1>')
-// }) 
+  // Guarda el log en Supabase
+  try {
+    await supabase.from('logs').insert([log]);
 
-
-// app.get('/usuarios', async (req, res) => {//TODO
-//     const { data, error } = await supabase //****AQUIIIII!!*****
-//       .from('usuarios')
-//       .select('*')  // Selecciona todas las columnas
+    // Muestra en consola (para Render)
+    console.log(`[LOG] ${log.fecha} - ${log.metodo} ${log.ruta} desde ${log.origen} (${log.ip}) UA:${log.user_agent}`);
   
-//     if (error) {
-//       console.error('Error al obtener usuarios:', error)
-//       return res.status(500).send('Error al obtener usuarios')
-//     }
-  
-//     res.json(data) // Envía los usuarios como JSON
-// })
+  } catch (error) {
+    console.error('Error guardando log en Supabase:', error);
+    // No detenemos la petición si falla el log
+  }
+
+  next(); //next(); // Si no hay error, continuamos con la siguiente función de middleware
+  //hecha la inserción continuamos con la petición que es un get a /log, para mostrar los logs
+
+});
 
 
-// app.delete('/usuarios/:id', async (req, res) => {
-//     const id = parseInt(req.params.id);//!Capturamos id q fue enviado como parametro dinamico. 
+//TODO: Ruta para ver logs (protégela en producción)
+app.get("/logs", async (req, res) => {
+  const { data, error } = await supabase
+    .from("logs")
+    .select("*")                          //os registros más recientes aparecen primero en los resultados.
+    .order("fecha", { ascending: false })//Ordena los resultados por la columna fecha de forma descendente.
+    .limit(100); //Solo trae los primeros 100 resultados de la consulta. Evita traer demasiados registros.
+
+  if (error) {
+    console.error("Error al obtener logs:", error);
+    return res.status(500).json({ error: "Error al obtener logs" });
+  }
   
-//     const { data, error } = await supabase //! .select() después de .delete() devuelve los registros eliminados en "data"
-//       .from('usuarios')
-//       .delete()
-//       .eq('id', id)
-//       .select();
-  
-//     if (error) {
-//       console.error('Error al eliminar usuario:', error);
-//       return res.status(500).json({ error: 'Error al eliminar usuario' });
-//     }
-  
-//     if (data.length === 0) { //!Confirmar la eliminacion, data trae el ele eliminado, false y no entra
-//       return res.status(404).json({ error: 'Usuario no encontrado' });
-//     }
-  
-//     res.status(204).send(); // Eliminación exitosa, sin contenido
+  res.json(data);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Ruta raíz para comprobar servidor activo
+app.get("/", (req, res) => {
+  res.send("<h1>Servidor up</h1>");
+});
+
+
+
+//TODO: Get mejorado para capturar parametros de busqueda pasados por URL
+//! COMO ESTABA: Obtener todos los usuarios
+// app.get("/usuarios", async (req, res) => {
+//   const { data, error } = await supabase.from("usuarios").select("*");
+
+//   if (error) {
+//     console.error("Error al obtener usuarios:", error);
+//     return res.status(500).send("Error al obtener usuarios");
+//   }
+//   res.json(data);
 // });
 
+app.get("/usuarios", async (req, res) => {
+  const {edad, genero} = req.query
 
-
-// app.get('/usuarios/:id', async (req, res) => {//?NEVESARIA PARA HACER PUT PQ FRONT VALIDA SU EXISTENCIA ANTES
-//     const id = parseInt(req.params.id);
-//     const { data, error } = await supabase
-//       .from('usuarios')
-//       .select('*')
-//       .eq('id', id)
-//       .single(); //!.single() para q la consulta retorne un registro TDD Objeto en lugar de un arry con 1 ele
+  const query = supabase.from("usuarios").select("*");
   
-//     if (error) {
-//       return res.status(500).json({ error: 'Error al obtener usuario' });
-//     }
-//     if (!data) {//!si la consulta retorna folsy no fue exitosa. 
-//       return res.status(404).json({ error: 'Usuario no encontrado' });
-//     }
-//     res.json(data);
-//   });
-
-
-//   app.post('/usuarios', async (req, res) => {
-//     const usuario = req.body; //! 1. traemos el cuerpo de la peticion (form) { nombre, edad, profesion }
- 
-//     //!2. validamos que esten todos los campos, evitando data corrupta.
-//     if (!usuario.nombre || !usuario.edad ||  !usuario.email || !usuario.foto || !usuario.aceptacion || !usuario.genero){
-//       return res.status(400).json({ error: 'Faltan datos obligatorios' })
-//       console.log('faltan datos obligatorios')
-//     }
-
-//     const { data, error } = await supabase
-//       .from('usuarios')
-//       .insert([{ ...usuario }])//! 3 .insert() espera un arry de Objs, incluso si se inserte un solo registro.
-//       .select();
+  //?aplicamos filtros si existen
+  if(edad !== undefined) query.eq('edad', Number(edad))
   
-//     if (error) {
-//       console.error('Error al crear usuario:', error);
-//       return res.status(500).json({ error: 'Error al crear usuario' });
-//     }
-  
-//     res.status(201).json(data[0]); //!pasamos el registro creado
-//   });
-
-
-//   app.put('/usuarios/:id', async (req, res) => {
-//     const id = parseInt(req.params.id); //! id para saber a quien voy a UPDATE
-//     const usuario = req.body; //!Data a UPDATE
-  
-//     if ( // Validar que al menos un campo venga para actualizarm NO TODOS PUEDEN DAR TRUE
-//       !usuario.nombre &&
-//       !usuario.edad &&
-//       !usuario.email &&
-//       !usuario.foto &&
-//       !usuario.aceptacion &&
-//       !usuario.genero
-//     ) {
-//       return res.status(400).json({ error: 'Debes enviar al menos un campo para actualizar' });
-//     }
-  
-//     //! Construir objeto con la UPDATE data enviada desde front
-//     const camposActualizar = {};
-//     if (usuario.nombre) camposActualizar.nombre = usuario.nombre;
-//     if (usuario.edad) camposActualizar.edad = usuario.edad;
-//     if (usuario.email) camposActualizar.email = usuario.email;
-//     if (usuario.foto) camposActualizar.foto = usuario.foto;
-//     if (usuario.aceptacion !== undefined) camposActualizar.aceptacion = usuario.aceptacion;
-//     if (usuario.genero) camposActualizar.genero = usuario.genero;
-  
-//     const { data, error } = await supabase
-//       .from('usuarios')
-//       .update(camposActualizar) //!simplemente pasamos el Obj
-//       .eq('id', id)
-//       .select();//!obtenemos el ele update
-  
-//     if (error) {
-//       console.error('Error al actualizar usuario:', error);
-//       return res.status(500).json({ error: 'Error al actualizar usuario' });
-//     }
-  
-//     if (data.length === 0) {
-//       return res.status(404).json({ error: 'Usuario no encontrado' });
-//     }
-  
-//     res.json(data[0]); //! enviamos Usuario actualizado
-//   });
+    if(genero !== undefined) {
+      const generoBool = genero === 'true'
+      query.eq('genero', generoBool)
+  }
   
 
-// app.listen(PORT, ()=>{
-//     console.log(`Servidor corriendo en http://localhost:${PORT}`);
-// })
+  const { data, error } = await query; //!cadena de query lista 
+
+  if (error) {
+    console.error("Error al obtener usuarios:", error);
+    return res.status(500).send("Error al obtener usuarios");
+  }
+  res.json(data);
+});
+
+
+
+//Obtener usuario por ID
+app.get("/usuarios/:id", async (req, res) => {
+    const id = parseInt(req.params.id)
+   const {data, error} = await supabase.from('usuarios').select('*').eq('id', id).single()
+    //const {data, error} = await supabase.from('usuarios').select('*').eq('id', id)
+    if(error) return res.status(500).json({error:'Error la obtener al usuario'})
+    if(!data) return res.status(404).json({error:'Error para encontrar al usuario'})
+    res.json(data)
+})
+
+
+//Crear nuevo usuario CON LOS CHICOS
+app.post("/usuarios", async (req, res )=> {  //TODO: AGREGAR {}
+    const usuario = req.body
+    if(
+        !usuario.nombre ||
+        !usuario.email ||
+        !usuario.foto ||
+        usuario.edad === undefined ||
+        usuario.aceptacion === undefined ||
+        usuario.genero === undefined
+    ) return res.status(400).json({error:'Faltan datos para hacer post de usuario'})
+
+    //TODO: AGREGAR {}, const {data, error} = await supabase.from('usuarios').insert([...usuario]).select()
+    const {data, error} = await supabase.from('usuarios').insert([{...usuario}]).select()
+
+    if(error) return res.status(500).json({error:'Error al crear/postear nuevo uusario'})
+
+    res.json(data[0])
+})
+
+
+//*Porque si el frontend envía explícitamente null, tu backend lo aceptaría y podrías guardar un valor nulo en la base de datos, 
+//*lo cual normalmente no quieres para campos obligatorios o booleanos.
+//TODO TERMINAR: Actualizar usuario por ID
+app.put("/usuarios/:id", async (req, res)=>{
+    const id =  parseInt(req.params.id)
+    const usuario = req.body
+    if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
+        usuario.nombre === undefined &&
+        usuario.email === undefined &&
+        usuario.foto === undefined &&
+        usuario.genero === undefined &&
+        usuario.aceptacion === undefined  || usuario.aceptacion === null && 
+        usuario.edad === undefined || usuario.edad === null
+
+       //TODO .... Haz el resto de las validaciones
+    ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
+    //Creamos el Obj a enviar para actualizar el resgistro del ID.
+    const camposActualizar = {}
+    if(usuario.nombre !== undefined) camposActualizar.nombre = usuario.nombre;
+    if(usuario.edad !== undefined && usuario.edad !== null)  camposActualizar.edad = usuario.edad;
+    if(usuario.email !== undefined) camposActualizar.email = usuario.email;
+    if(usuario.foto !== undefined) camposActualizar.foto = usuario.foto;
+    if(usuario.aceptacion !== undefined && usuario.aceptacion !== null) camposActualizar.aceptacion = usuario.aceptacion;
+    if(usuario.genero !== undefined) camposActualizar.genero = usuario.genero;
+
+    const {data, error} = await supabase.from('usuarios').update(camposActualizar).eq('id', id).select()
+
+    if(error) res.status(500).json({error:'Error al actualizar el usuario'})
+    if(data.length === 0) res.status(404).json({error:'Usuario no encontrado'})
+      res.json(data[0]) //? Enviamos el usuario actualizado
+})
+
+// Eliminar usuario por ID
+app.delete("/usuarios/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  const { data, error } = await supabase
+    .from("usuarios")
+    .delete()
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    console.error("Error al eliminar usuario", error);
+    return res.status(500).json({ error: "Error al eliminar usuario" });
+  }
+
+  if (data.length === 0) {
+    return res.status(404).json({ error: "Usuario no encontrado" });
+  }
+
+  res.status(200).send();
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
