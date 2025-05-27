@@ -69,8 +69,8 @@ app.get("/", (req, res) => {
 
 
 3. //TODO: Ruta para ver logs (protégela en producción)
-app.get('/logs', (req, res)=>{
-  const {data, error} = supabase.from('logs').select('*').order('fecha', {ascending:false}).limit(100)
+app.get('/logs', async (req, res)=>{
+  const {data, error} = await supabase.from('logs').select('*').order('fecha', {ascending:false}).limit(100)
   if(error) return res.status(500).json({error:'Error al obtener logs'})
   res.json(data)
 })
