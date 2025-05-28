@@ -5,14 +5,15 @@ import cors from "cors";
 const app = express();
 const PORT = 3000;
 app.use(express.json());
-//app.use(cors()); //TODO: Mejorar la seguridad
+//app.use(cors()); //Mejorar la seguridad
 
-//!para cambiar de pierto del front: npx live-server --port=5502
+//!para cambiar de puerto del front: npx live-server --port=5502
 const allowedOrigins = [
 'http://127.0.0.1:5501',
 'https://practica-crud-academia.vercel.app'
 ]
 
+//Middleware para estanlecer los origins permitidos para consumir este back
 app.use(cors(
   {origin:(origin, callback)=> {
     if(!origin || allowedOrigins.includes(origin)) callback(null, true) //✅Permite acceso
@@ -21,17 +22,7 @@ app.use(cors(
   }//unico front permitido para consumir este server
 )); 
 
-
-
-1. // TODO: Middleware para registrar logs en Supabase
-//ocupare un use(), no un get, post, det...
-//creamos un obj del req con la info que queremos guardar 
-//infoL ip, meth, url...
-//try de intert del obj en la tabla logs de supabase
-//catch el error
-//next al nuev middleware
-
-
+//Middleware para registrar logs en Supabase
 app.use( async(req, res, next)=> {
   const log = {
     fecha: new Date().toISOString(), // Momento exacto de la petición: YYYY-MM-DDTHH:mm:ss.sssZ
@@ -50,15 +41,10 @@ app.use( async(req, res, next)=> {
   next()
 })
 
-
-
-
-
-
-2. //TODO: Agrega esto al inicio de tu archivo principal (antes de las rutas)
-
-
-
+//!
+//TODO: 6. Agregar los setters de ejs al inicio de tu archivo principal (antes de las rutas)
+app.set('view engine', 'ejs');
+app.set('views', './views'); // Carpeta donde pondrás tus templates
 
 
 
@@ -67,8 +53,8 @@ app.get("/", (req, res) => {
   res.send("<h1>Servidor up</h1>");
 });
 
-
-3. //TODO: Ruta para ver logs (protégela en producción)
+//todo: 1. add async & await
+//Ruta para ver logs (protégela en producción)
 app.get('/logs', async (req, res)=>{
   const {data, error} = await supabase.from('logs').select('*').order('fecha', {ascending:false}).limit(100)
   if(error) return res.status(500).json({error:'Error al obtener logs'})
@@ -77,18 +63,28 @@ app.get('/logs', async (req, res)=>{
 
 
 
-4. //TODO: Crea la ruta en Express usando el template
+
+//todo: 2. Crear el template HTML de la tabla de los logs, para servirlos desde el backend.
+//todo: 3. npm install ejs
+//todo: 4. Crear en raíz de tu proyecto, "views"/"logtabla.ejs" con el codigo HTML
+
+//todo: 5. Crea la ruta en Express para mostrar el template HTML de la tabla de logs
+app.get('/logtabla', async (req, res) => {
+  const { data: logs, error } = await supabase
+    .from('logs')
+    .select('*')
+    .order('fecha', { ascending: false })
+    .limit(100);
+
+  if (error) return res.status(500).send('Error al obtener logs');
+
+  res.render('logtabla', { logs }); //! Renderiza el template y pasa los logs
+});
 
 
 
 
-
-
-
-
-
-//TODO: Get mejorado para capturar parametros de busqueda pasados por URL
-//! COMO ESTABA: Obtener todos los usuarios
+//COMO ESTABA app.get("/usuarios"...) sin req.query
 // app.get("/usuarios", async (req, res) => {
 //   const { data, error } = await supabase.from("usuarios").select("*");
 
@@ -99,6 +95,7 @@ app.get('/logs', async (req, res)=>{
 //   res.json(data);
 // });
 
+//Get mejorado para capturar parametros de busqueda pasados por URL
 app.get("/usuarios", async (req, res) => {
   const {edad, genero} = req.query
 
@@ -123,7 +120,6 @@ app.get("/usuarios", async (req, res) => {
 });
 
 
-
 //Obtener usuario por ID
 app.get("/usuarios/:id", async (req, res) => {
     const id = parseInt(req.params.id)
@@ -136,7 +132,7 @@ app.get("/usuarios/:id", async (req, res) => {
 
 
 //Crear nuevo usuario CON LOS CHICOS
-app.post("/usuarios", async (req, res )=> {  //TODO: AGREGAR {}
+app.post("/usuarios", async (req, res )=> {
     const usuario = req.body
     if(
         !usuario.nombre ||
@@ -156,12 +152,13 @@ app.post("/usuarios", async (req, res )=> {  //TODO: AGREGAR {}
 })
 
 
-//*Porque si el frontend envía explícitamente null, tu backend lo aceptaría y podrías guardar un valor nulo en la base de datos, 
-//*lo cual normalmente no quieres para campos obligatorios o booleanos.
-//TODO TERMINAR: Actualizar usuario por ID
+//Actualizar usuario por ID
 app.put("/usuarios/:id", async (req, res)=>{
-    const id =  parseInt(req.params.id)
-    const usuario = req.body
+  const id =  parseInt(req.params.id)
+  const usuario = req.body
+
+  //*Si el frontend envía explícitamente null, tu backend lo aceptaría y enviaria a la BBDD
+  //*lo cual normalmente no quieres para campos obligatorios o booleanos.
     if( //Aqui debemos validad que al menos un campo del obj usuario traiga data validad, para actualizar
         usuario.nombre === undefined &&
         usuario.email === undefined &&
@@ -169,8 +166,6 @@ app.put("/usuarios/:id", async (req, res)=>{
         usuario.genero === undefined &&
         usuario.aceptacion === undefined  || usuario.aceptacion === null && 
         usuario.edad === undefined || usuario.edad === null
-
-       //TODO .... Haz el resto de las validaciones
     ) return res.status(400).json({error: 'Almenos un campo debe ser enviado para actualizar/put'})
     //Creamos el Obj a enviar para actualizar el resgistro del ID.
     const camposActualizar = {}
