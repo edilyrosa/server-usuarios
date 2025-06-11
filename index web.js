@@ -2,28 +2,34 @@ import { supabase } from "./supabaseClient.js";
 import express from "express";
 import cors from "cors";
 
+//todo: ejecuta: ✅npm install jsonwebtoken express-jwt
+import expressJwt from 'express-jwt'; //TODO 1: usada como parametro en el middleware para proteger ruta
+import jwt from 'jsonwebtoken';//TODO 2: con jwt.sign() crearemos el token
+import 'dotenv/config'; //TODO 3: para usar las var de entorno
+const  jwtSecret= process.env.JWT_SECRET//TODO 4 clave secreta que se usa para firmar y verificar los tokens, tu la defines 
+
 const app = express();
 const PORT = 3000;
 app.use(express.json());
-app.use(cors()); //LO PERMITE POR LA SECCION 008
+//app.use(cors()); //Mejorar la seguridad
 
-// //!para cambiar de puerto del front: npx live-server --port=5502
-// const allowedOrigins = [
-// 'http://127.0.0.1:5501',
-// 'https://practica-crud-academia.vercel.app'
-// ]
+//!para cambiar de puerto del front: npx live-server --port=5502
+const allowedOrigins = [
+'http://127.0.0.1:5501',
+'https://practica-crud-academia.vercel.app'
+]
 
-// //Middleware para estanlecer los origins permitidos para consumir este back
-// app.use(cors(
-//   {origin:(origin, callback)=> {
-//     if(!origin || allowedOrigins.includes(origin)) callback(null, true) //✅Permite acceso
-//       else callback(new Error('Origin no permitido por CORS')) //❌ Bloquea acceso
-//   }
-//   }//unico front permitido para consumir este server
-// )); 
+//Middleware para estanlecer los origins permitidos para consumir este back
+app.use(cors(
+  {origin:(origin, callback)=> {
+    if(!origin || allowedOrigins.includes(origin)) callback(null, true) //✅Permite acceso
+      else callback(new Error('Origin no permitido por CORS')) //❌ Bloquea acceso
+  }
+  }//unico front permitido para consumir este server
+)); 
 
 //Middleware para registrar logs en Supabase
-app.use( async(req, res, next)=> { //!lo ultimo
+app.use( async(req, res, next)=> {
   const log = {
     fecha: new Date().toISOString(), // Momento exacto de la petición: YYYY-MM-DDTHH:mm:ss.sssZ
     ip: req.ip, // IP del cliente que hace la petición
@@ -42,7 +48,10 @@ app.use( async(req, res, next)=> { //!lo ultimo
 })
 
 //TODO: 6. Agregar los setters de ejs al inicio de tu archivo principal (antes de las rutas)
-
+//!quitar
+app.set('view engine', 'ejs');
+app.set('views', './views'); // Carpeta donde pondrás tus templates
+//!
 
 
 // Ruta raíz para comprobar servidor activo
@@ -50,9 +59,31 @@ app.get("/", (req, res) => {
   res.send("<h1>Servidor up</h1>");
 });
 
+
+
+
+//TODO 5: LOGIN QUE CREA EL TOKEN DE AUTENTICACION POR CREDENCIALES CORRECTAS
+const usuario = { nombre: "alumno", clave: "1234" };//deberia ser obtenido de la BBDD
+app.post('/login', (req, res) => {
+  const { nombre, clave } = req.body;//credenciales enviadas por cliente
+  if (nombre === usuario.nombre && clave === usuario.clave) { //comparamos credenciales de la BBDD
+    // Generar token
+    const token = jwt.sign({ nombre }, jwtSecret, { expiresIn: '1h' });
+    res.json({ token });  // Envías el token al cliente, para que lo use en futuras peticiones protegidas.
+  } else {
+    res.status(401).json({ mensaje: "Credenciales incorrectas" });
+  }
+});
+
+
+
+
+
+
+
 //todo: 1. add async & await
 //Ruta para ver logs (protégela en producción)
-app.get('/logs', async (req, res)=>{ //!lo ultimo
+app.get('/logs', async (req, res)=>{
   const {data, error} = await supabase.from('logs').select('*').order('fecha', {ascending:false}).limit(100)
   if(error) return res.status(500).json({error:'Error al obtener logs'})
   res.json(data)
@@ -66,27 +97,48 @@ app.get('/logs', async (req, res)=>{ //!lo ultimo
 //todo: 4. Crear en raíz de tu proyecto, "views"/"logtabla.ejs" con el codigo HTML
 
 //todo: 5. Crea la ruta en Express para mostrar el template HTML de la tabla de logs
+//!quitar
+// app.get('/logtabla', async (req, res) => {
+//   const { data: logs, error } = await supabase
+//     .from('logs')
+//     .select('*')
+//     .order('fecha', { ascending: false })
+//     .limit(100);
 
+//   if (error) return res.status(500).send('Error al obtener logs');
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//   res.render('logtabla', { logs }); //! Renderiza el template y pasa la res "logs" obtenida
+// });
+// //!
 // res.render() es un método de Express.js que sirve para renderizar (mostrar) una vista 
 // o plantilla al usuario. En este caso, está renderizando la plantilla logtabla.ejs.
 //Además, le pasa un objeto con los datos de los logs: { logs }. Para que dentro de  'logtabla' 
 // se pueda acceder a esta y mostrar la información que contiene.
+
+
+
+
+
+app.get( //TODO 6: RUTA PROTEGIDA CON TOKEN
+  '/logtabla',
+  expressJwt({ secret: jwtSecret, algorithms: ['HS256'] }),
+  async (req, res) => {
+    const { data: logs, error } = await supabase
+      .from('logs')
+      .select('*')
+      .order('fecha', { ascending: false })
+      .limit(100);
+
+    if (error) return res.status(500).send('Error al obtener logs');
+    res.render('logtabla', { logs });
+  }
+);
+
+
+
+
+
+
 
 
 
@@ -212,7 +264,48 @@ app.delete("/usuarios/:id", async (req, res) => {
   res.status(200).send();
 });
 
+
+
+app.use((err, req, res, next) => { //TODO 7: ERROR POR TOKEN INVALIDO
+  if (err.name === 'UnauthorizedError') {
+    res.status(401).json({ mensaje: 'Token inválido o no proporcionado' });
+  } else {
+    next(err);
+  }
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
